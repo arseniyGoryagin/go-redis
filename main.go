@@ -23,7 +23,7 @@ func main() {
 
 	for {
 
-		resp := NewRespReader(conn)
+		resp := NewReader(conn)
 		res, err := resp.Read()
 		if err != nil {
 			fmt.Println(err)
