@@ -1,20 +1,46 @@
 package main
 
 import (
+	"errors"
 	"strconv"
 	"strings"
+	"sync"
 )
 
-func ping(args []Value) (Value, error) {
+type Handler struct {
+	storageSet      map[string]string
+	storageSetMutex sync.RWMutex
+}
+
+func NewHandler() Handler {
+	return Handler{
+		storageSet: make(map[string]string),
+	}
+}
+
+func (h *Handler) Handle(command string, args []Value) (Value, error) {
+	switch command {
+	case "PING":
+		return h.ping(args)
+	case "GET":
+		return h.get(args)
+	case "SET":
+		return h.set(args)
+	default:
+		return Value{}, errors.New("NO handler for command " + command)
+	}
+}
+
+func (h *Handler) ping(args []Value) (Value, error) {
 
 	if len(args) == 1 {
 		return Value{typ: STRING, strValue: "PONG"}, nil
 	}
 
-	return Value{typ: STRING, strValue: parseValues(args)}, nil
+	return Value{typ: STRING, strValue: h.parseValues(args)}, nil
 }
 
-func parseValues(args []Value) string {
+func (h *Handler) parseValues(args []Value) string {
 
 	var res strings.Builder
 
@@ -30,7 +56,7 @@ func parseValues(args []Value) string {
 			res.WriteString(args[i].strValue)
 		case ARRAY:
 			for range len(args[i].values) {
-				res.WriteString(parseValues(args[i].values))
+				res.WriteString(h.parseValues(args[i].values))
 			}
 		}
 		res.WriteString(" ")
@@ -39,6 +65,30 @@ func parseValues(args []Value) string {
 	return res.String()
 }
 
-var Handlers = map[string]func([]Value) (Value, error){
-	"PING": ping,
+func (h *Handler) set(args []Value) (Value, error) {
+
+	if len(args) != 3 {
+		return Value{}, errors.New("wrong number of arguments")
+	}
+
+	Set(args[1].strValue, args[2].strValue)
+
+	return Value{typ: STRING, strValue: "OK"}, nil
+
+}
+
+func (h *Handler) get(args []Value) (Value, error) {
+
+	if len(args) != 2 {
+		return Value{}, errors.New("wrong number of arguments")
+	}
+
+	val, found := Get(args[1].strValue)
+
+	if !found {
+		return Value{typ: NULL}, nil
+	}
+
+	return Value{typ: BULK, strValue: val}, nil
+
 }

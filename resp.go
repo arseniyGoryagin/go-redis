@@ -14,6 +14,7 @@ const (
 	INTEGER = ":"
 	BULK    = "$"
 	ARRAY   = "*"
+	NULL    = "NULL"
 )
 
 type Value struct {
@@ -63,6 +64,8 @@ func (w *Writer) Write(value Value) error {
 func (w *Writer) write(value Value) (message string, err error) {
 
 	switch value.typ {
+	case NULL:
+		return w.writeNull(), nil
 	case STRING:
 		return w.writeString(value.strValue), nil
 	case ERROR:
@@ -91,6 +94,10 @@ func (w *Writer) write(value Value) (message string, err error) {
 
 func (w *Writer) writeString(val string) string {
 	return "+" + val + "\r\n"
+}
+
+func (w *Writer) writeNull() string {
+	return "$-1\r\n"
 }
 
 func (w *Writer) writeInt(val int) string {

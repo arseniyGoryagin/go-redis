@@ -27,6 +27,8 @@ func main() {
 
 		reader := NewReader(conn)
 
+		handler := NewHandler()
+
 		res, err := reader.Read()
 		if err != nil {
 			err := writer.Write(Value{typ: ERROR, strValue: ERROR + err.Error()})
@@ -45,16 +47,7 @@ func main() {
 			continue
 		}
 
-		handler, ok := Handlers[command]
-		if !ok {
-			err := writer.Write(Value{typ: ERROR, strValue: ERROR + "no handler for " + command})
-			if err != nil {
-				fmt.Println(err)
-			}
-			continue
-		}
-
-		resp, err := handler(res.values)
+		resp, err := handler.Handle(command, res.values)
 		if err != nil {
 			err := writer.Write(Value{typ: ERROR, strValue: ERROR + err.Error()})
 			if err != nil {
