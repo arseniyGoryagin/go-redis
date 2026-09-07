@@ -26,6 +26,10 @@ func (h *Handler) Handle(command string, args []Value) (Value, error) {
 		return h.get(args)
 	case "SET":
 		return h.set(args)
+	case "HGET":
+		return h.hget(args)
+	case "HSET":
+		return h.hset(args)
 	default:
 		return Value{}, errors.New("NO handler for command " + command)
 	}
@@ -83,7 +87,35 @@ func (h *Handler) get(args []Value) (Value, error) {
 		return Value{}, errors.New("wrong number of arguments")
 	}
 
-	val, found := Get(args[1].strValue)
+	found, val := Get(args[1].strValue)
+
+	if !found {
+		return Value{typ: NULL}, nil
+	}
+
+	return Value{typ: BULK, strValue: val}, nil
+
+}
+
+func (h *Handler) hset(args []Value) (Value, error) {
+
+	if len(args) != 4 {
+		return Value{}, errors.New("wrong number of arguments")
+	}
+
+	Hset(args[1].strValue, args[2].strValue, args[3].strValue)
+
+	return Value{typ: STRING, strValue: "OK"}, nil
+
+}
+
+func (h *Handler) hget(args []Value) (Value, error) {
+
+	if len(args) != 3 {
+		return Value{}, errors.New("wrong number of arguments")
+	}
+
+	found, val := Hget(args[1].strValue, args[2].strValue)
 
 	if !found {
 		return Value{typ: NULL}, nil
